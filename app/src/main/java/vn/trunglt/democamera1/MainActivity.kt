@@ -58,14 +58,10 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
 //            parameters?.focusMode = Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE
             mCamera?.parameters = parameters
             mCamera?.setDisplayOrientation(90)
-            mCamera?.startSmoothZoom(5)
             mCamera?.setPreviewDisplay(binding.surfaceView.holder)
             mCamera?.setFaceDetectionListener { faces, camera ->
                 val faceRectList = faces.map { face ->
-                    val faceRect = face.rect
-                    Rect(faceRect.bottom, faceRect.left, faceRect.top, faceRect.right).also {
-                        println("${it.left}-${it.top}-${it.right}-${it.bottom}")
-                    }
+                    face.rect
                 }
                 binding.transparentView.setFaceRectList(faceRectList)
             }
