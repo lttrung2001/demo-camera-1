@@ -5,14 +5,17 @@ import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Rect
+import android.hardware.Camera
+import android.hardware.Camera.CameraInfo
 import android.util.AttributeSet
 import android.view.SurfaceView
+import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.toRect
 import androidx.core.graphics.toRectF
 
 
-class CustomSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(context, attrs) {
+class DrawingView(context: Context, attrs: AttributeSet) : SurfaceView(context, attrs) {
     private val faceRectList = mutableListOf<Rect>()
     private val rectBorderPaint by lazy {
         Paint().apply {
@@ -20,12 +23,6 @@ class CustomSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(con
             style = Paint.Style.STROKE
             color = ContextCompat.getColor(context, R.color.white)
             strokeWidth = 4f
-        }
-    }
-    private val eraser by lazy {
-        Paint().apply {
-            flags = Paint.ANTI_ALIAS_FLAG
-            color = ContextCompat.getColor(context, android.R.color.transparent)
         }
     }
 
@@ -53,7 +50,7 @@ class CustomSurfaceView(context: Context, attrs: AttributeSet) : SurfaceView(con
             matrix.mapRect(rectF)
             rectF.toRect()
         })
-        postInvalidate()
+        invalidate()
     }
 
     private fun drawFaces(canvas: Canvas) {

@@ -15,10 +15,8 @@
             android:id="@+id/surface_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
-        <vn.trunglt.democamera1.CustomSurfaceView
+        <vn.trunglt.democamera1.DrawingView
             android:id="@+id/transparent_view"
-            android:background="@android:color/transparent"
-            android:backgroundTint="@android:color/transparent"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
     </FrameLayout>
