@@ -2,6 +2,7 @@ package vn.trunglt.democamera1
 
 import android.graphics.PixelFormat
 import android.hardware.Camera
+import android.hardware.Camera.FaceDetectionListener
 import android.util.Log
 import android.view.SurfaceHolder
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -10,6 +11,14 @@ import androidx.lifecycle.LifecycleOwner
 abstract class CameraManager : DefaultLifecycleObserver,
     SurfaceHolder.Callback {
     private var mCamera: Camera? = null
+    private val faceDetectionListener by lazy {
+        FaceDetectionListener { faces, camera ->
+            val faceRectList = faces.map { face ->
+                face.rect
+            }
+            drawingView.setFaceRectList(faceRectList)
+        }
+    }
     abstract val drawingView: DrawingView
     abstract val surfaceHolder: SurfaceHolder
     abstract fun onSurfaceCreated()
@@ -38,7 +47,7 @@ abstract class CameraManager : DefaultLifecycleObserver,
 
     fun openCamera(id: Int): Boolean {
         return try {
-            release()
+//            release()
             mCamera = Camera.open(id)
             val parameters = mCamera?.parameters
             parameters?.previewFrameRate = 30
@@ -47,12 +56,7 @@ abstract class CameraManager : DefaultLifecycleObserver,
             mCamera?.parameters = parameters
             mCamera?.setDisplayOrientation(90)
             mCamera?.setPreviewDisplay(surfaceHolder)
-            mCamera?.setFaceDetectionListener { faces, camera ->
-                val faceRectList = faces.map { face ->
-                    face.rect
-                }
-                drawingView.setFaceRectList(faceRectList)
-            }
+            mCamera?.setFaceDetectionListener(faceDetectionListener)
             mCamera?.startPreview()
             mCamera?.startFaceDetection()
             true

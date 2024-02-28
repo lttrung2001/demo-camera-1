@@ -20,8 +20,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val cameraManager by lazy {
         object: CameraManager() {
-            override val drawingView = binding.transparentView
-            override val surfaceHolder = binding.surfaceView.holder
+            override val drawingView = this@MainActivity.binding.transparentView
+            override val surfaceHolder = this@MainActivity.binding.surfaceView.holder
 
             override fun onSurfaceCreated() {
                 if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
