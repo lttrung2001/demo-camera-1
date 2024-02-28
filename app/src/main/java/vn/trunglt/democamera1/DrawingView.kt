@@ -2,14 +2,12 @@ package vn.trunglt.democamera1
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Rect
-import android.hardware.Camera
-import android.hardware.Camera.CameraInfo
 import android.util.AttributeSet
 import android.view.SurfaceView
-import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.toRect
 import androidx.core.graphics.toRectF
@@ -25,10 +23,14 @@ class DrawingView(context: Context, attrs: AttributeSet) : SurfaceView(context, 
             strokeWidth = 4f
         }
     }
+    private lateinit var matrix: Matrix
+
+    init {
+        setBackgroundColor(Color.TRANSPARENT)
+    }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        canvas.drawColor(ContextCompat.getColor(context, android.R.color.transparent))
         drawFaces(canvas)
     }
 
@@ -36,17 +38,14 @@ class DrawingView(context: Context, attrs: AttributeSet) : SurfaceView(context, 
         faceRectList.clear()
         faceRectList.addAll(rectList.map {
             val rectF = it.toRectF()
-            val matrix = Matrix()
-            matrix.setScale(if (true) -1f else 1f, 1f)
-            // This is the value for android.hardware.Camera.setDisplayOrientation.
-            // This is the value for android.hardware.Camera.setDisplayOrientation.
-            matrix.postRotate(90f)
-            // Camera driver coordinates range from (-1000, -1000) to (1000, 1000).
-            // UI coordinates range from (0, 0) to (width, height).
-            // Camera driver coordinates range from (-1000, -1000) to (1000, 1000).
-            // UI coordinates range from (0, 0) to (width, height).
-            matrix.postScale(measuredWidth / 2000f, measuredHeight / 2000f)
-            matrix.postTranslate(measuredWidth / 2f, measuredHeight / 2f)
+            if (!this::matrix.isInitialized) {
+                matrix = Matrix().apply {
+                    setScale(if (true) -1f else 1f, 1f)
+                    postRotate(90f)
+                    postScale(measuredWidth / 2000f, measuredHeight / 2000f)
+                    postTranslate(measuredWidth / 2f, measuredHeight / 2f)
+                }
+            }
             matrix.mapRect(rectF)
             rectF.toRect()
         })

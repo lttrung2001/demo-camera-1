@@ -13,9 +13,7 @@ abstract class CameraManager : DefaultLifecycleObserver,
     private var mCamera: Camera? = null
     private val faceDetectionListener by lazy {
         FaceDetectionListener { faces, camera ->
-            val faceRectList = faces.map { face ->
-                face.rect
-            }
+            val faceRectList = faces.map { face -> face.rect }
             drawingView.setFaceRectList(faceRectList)
         }
     }
