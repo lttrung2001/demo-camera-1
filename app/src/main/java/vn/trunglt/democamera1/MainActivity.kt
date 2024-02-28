@@ -2,18 +2,10 @@ package vn.trunglt.democamera1
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.graphics.Matrix
-import android.graphics.PixelFormat
-import android.graphics.Rect
-import android.graphics.RectF
 import android.hardware.Camera
 import android.hardware.Camera.CameraInfo
 import android.os.Bundle
-import android.util.Log
-import android.view.SurfaceHolder
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.graphics.toRect
-import androidx.core.graphics.toRectF
 import vn.trunglt.democamera1.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -27,7 +19,7 @@ class MainActivity : AppCompatActivity() {
                 if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                     requestPermissions(arrayOf(Manifest.permission.CAMERA), 0)
                 } else {
-                    openCamera(getBackCameraId())
+                    openCamera(getFrontCameraId())
                 }
             }
         }
@@ -40,6 +32,10 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         cameraManager.init()
+
+        binding.btnTakePicture.setOnClickListener {
+            cameraManager.swap()
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -52,12 +48,12 @@ class MainActivity : AppCompatActivity() {
             it == Manifest.permission.CAMERA
         }.let {
             if (grantResults[it] == PackageManager.PERMISSION_GRANTED) {
-                cameraManager.openCamera(getBackCameraId())
+                cameraManager.openCamera(getFrontCameraId())
             }
         }
     }
 
-    private fun getBackCameraId(): Int {
+    private fun getFrontCameraId(): Int {
         val availableCameras = Camera.getNumberOfCameras()
         val info = CameraInfo()
         for (i in 0 until availableCameras) {

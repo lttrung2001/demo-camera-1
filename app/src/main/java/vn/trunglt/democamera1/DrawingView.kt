@@ -14,6 +14,12 @@ import androidx.core.graphics.toRectF
 
 
 class DrawingView(context: Context, attrs: AttributeSet) : SurfaceView(context, attrs) {
+    var isMirror = false
+        set(value) {
+            field = value
+            faceRectList.clear()
+            postInvalidate()
+        }
     private val faceRectList = mutableListOf<Rect>()
     private val rectBorderPaint by lazy {
         Paint().apply {
@@ -49,7 +55,7 @@ class DrawingView(context: Context, attrs: AttributeSet) : SurfaceView(context, 
             matrix.mapRect(rectF)
             rectF.toRect()
         })
-        invalidate()
+        postInvalidate()
     }
 
     private fun drawFaces(canvas: Canvas) {

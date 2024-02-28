@@ -2,19 +2,35 @@ package vn.trunglt.democamera1
 
 import android.graphics.PixelFormat
 import android.hardware.Camera
+import android.hardware.Camera.CameraInfo
 import android.hardware.Camera.FaceDetectionListener
 import android.util.Log
 import android.view.SurfaceHolder
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 
-abstract class CameraManager : DefaultLifecycleObserver,
-    SurfaceHolder.Callback {
+abstract class CameraManager : DefaultLifecycleObserver {
+    private var cameraId: Int = 0
     private var mCamera: Camera? = null
     private val faceDetectionListener by lazy {
         FaceDetectionListener { faces, camera ->
             val faceRectList = faces.map { face -> face.rect }
             drawingView.setFaceRectList(faceRectList)
+        }
+    }
+    private val surfaceHolderCallback by lazy {
+        object: SurfaceHolder.Callback {
+            override fun surfaceCreated(holder: SurfaceHolder) {
+                onSurfaceCreated()
+            }
+
+            override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+
+            }
+
+            override fun surfaceDestroyed(holder: SurfaceHolder) {
+                release()
+            }
         }
     }
     abstract val drawingView: DrawingView
@@ -26,18 +42,6 @@ abstract class CameraManager : DefaultLifecycleObserver,
         release()
     }
 
-    override fun surfaceCreated(holder: SurfaceHolder) {
-        onSurfaceCreated()
-    }
-
-    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
-
-    }
-
-    override fun surfaceDestroyed(holder: SurfaceHolder) {
-        release()
-    }
-
     fun init() {
         setupDrawingView()
         setupPreviewView()
@@ -45,8 +49,10 @@ abstract class CameraManager : DefaultLifecycleObserver,
 
     fun openCamera(id: Int): Boolean {
         return try {
-//            release()
+            release()
             mCamera = Camera.open(id)
+            cameraId = id
+            drawingView.isMirror = id == CameraInfo.CAMERA_FACING_FRONT
             val parameters = mCamera?.parameters
             parameters?.previewFrameRate = 30
 //            parameters?.setPreviewSize(1080, 1920)
@@ -65,6 +71,14 @@ abstract class CameraManager : DefaultLifecycleObserver,
         }
     }
 
+    fun swap() {
+        if (cameraId == CameraInfo.CAMERA_FACING_BACK) {
+            openCamera(CameraInfo.CAMERA_FACING_FRONT)
+        } else {
+            openCamera(CameraInfo.CAMERA_FACING_BACK)
+        }
+    }
+
     private fun release() {
         mCamera?.release()
         mCamera = null
@@ -72,7 +86,7 @@ abstract class CameraManager : DefaultLifecycleObserver,
 
     private fun setupPreviewView() {
         surfaceHolder.apply {
-            addCallback(this@CameraManager)
+            addCallback(surfaceHolderCallback)
             setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS)
         }
     }
@@ -80,7 +94,7 @@ abstract class CameraManager : DefaultLifecycleObserver,
     private fun setupDrawingView() {
         drawingView.holder?.apply {
             setFormat(PixelFormat.TRANSPARENT)
-            addCallback(this@CameraManager)
+            addCallback(surfaceHolderCallback)
             setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS)
         }
     }
