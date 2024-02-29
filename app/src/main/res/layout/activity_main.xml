@@ -17,7 +17,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <vn.trunglt.democamera1.DrawingView
+        <vn.trunglt.democamera1.views.DrawingView
             android:id="@+id/transparent_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />

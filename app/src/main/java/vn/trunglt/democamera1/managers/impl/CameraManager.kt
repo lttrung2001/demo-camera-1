@@ -1,6 +1,10 @@
-package vn.trunglt.democamera1
+package vn.trunglt.democamera1.managers.impl
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.PixelFormat
+import android.graphics.Rect
+import android.graphics.YuvImage
 import android.hardware.Camera
 import android.hardware.Camera.CameraInfo
 import android.hardware.Camera.FaceDetectionListener
@@ -8,20 +12,25 @@ import android.util.Log
 import android.view.SurfaceHolder
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import com.google.mlkit.vision.common.InputImage
+import vn.trunglt.democamera1.managers.ICameraManager
+import java.io.ByteArrayOutputStream
 
-abstract class CameraManager : DefaultLifecycleObserver {
+
+class CameraManager : DefaultLifecycleObserver {
     private var cameraId: Int = 0
     private var mCamera: Camera? = null
+    private var callback: ICameraManager? = null
     private val faceDetectionListener by lazy {
         FaceDetectionListener { faces, camera ->
             val faceRectList = faces.map { face -> face.rect }
-            drawingView.setFaceRectList(faceRectList)
+            callback?.drawingView?.setFaceRectList(faceRectList)
         }
     }
     private val surfaceHolderCallback by lazy {
         object: SurfaceHolder.Callback {
             override fun surfaceCreated(holder: SurfaceHolder) {
-                onSurfaceCreated()
+                callback?.onSurfaceCreated()
             }
 
             override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
@@ -33,9 +42,21 @@ abstract class CameraManager : DefaultLifecycleObserver {
             }
         }
     }
-    abstract val drawingView: DrawingView
-    abstract val surfaceHolder: SurfaceHolder
-    abstract fun onSurfaceCreated()
+    private val previewCallback by lazy {
+        Camera.PreviewCallback { data, camera ->
+            val parameters = camera.parameters
+            val size = parameters.previewSize
+            val width = size.width
+            val height = size.height
+            val yuv = YuvImage(data, parameters.previewFormat, width, height, null)
+            val out = ByteArrayOutputStream()
+            yuv.compressToJpeg(Rect(0, 0, width, height), 100, out)
+            val bytes = out.toByteArray()
+            val inputImage = InputImage.fromBitmap(getBitmapFrom(bytes), 90)
+            callback?.onAnalyze(inputImage)
+            camera.addCallbackBuffer(data)
+        }
+    }
 
     override fun onDestroy(owner: LifecycleOwner) {
         super.onDestroy(owner)
@@ -47,19 +68,24 @@ abstract class CameraManager : DefaultLifecycleObserver {
         setupPreviewView()
     }
 
+    fun setCallback(callback: ICameraManager) {
+        this.callback = callback
+    }
+
     fun openCamera(id: Int): Boolean {
         return try {
             release()
             mCamera = Camera.open(id)
             cameraId = id
-            drawingView.isMirror = id == CameraInfo.CAMERA_FACING_FRONT
+            callback?.drawingView?.isMirror = id == CameraInfo.CAMERA_FACING_FRONT
             val parameters = mCamera?.parameters
             parameters?.previewFrameRate = 30
 //            parameters?.setPreviewSize(1080, 1920)
 //            parameters?.focusMode = Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE
             mCamera?.parameters = parameters
             mCamera?.setDisplayOrientation(90)
-            mCamera?.setPreviewDisplay(surfaceHolder)
+            mCamera?.setPreviewDisplay(callback?.surfaceHolder)
+            mCamera?.setPreviewCallback(previewCallback)
             mCamera?.setFaceDetectionListener(faceDetectionListener)
             mCamera?.startPreview()
             mCamera?.startFaceDetection()
@@ -80,22 +106,29 @@ abstract class CameraManager : DefaultLifecycleObserver {
     }
 
     private fun release() {
+        callback?.surfaceHolder?.removeCallback(surfaceHolderCallback)
+        callback?.drawingView?.holder?.removeCallback(surfaceHolderCallback)
+        mCamera?.setPreviewCallback(null)
         mCamera?.release()
         mCamera = null
     }
 
     private fun setupPreviewView() {
-        surfaceHolder.apply {
+        callback?.surfaceHolder?.apply {
             addCallback(surfaceHolderCallback)
             setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS)
         }
     }
 
     private fun setupDrawingView() {
-        drawingView.holder?.apply {
+        callback?.drawingView?.holder?.apply {
             setFormat(PixelFormat.TRANSPARENT)
             addCallback(surfaceHolderCallback)
             setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS)
         }
+    }
+
+    private fun getBitmapFrom(data: ByteArray): Bitmap {
+        return BitmapFactory.decodeByteArray(data, 0, data.size)
     }
 }
