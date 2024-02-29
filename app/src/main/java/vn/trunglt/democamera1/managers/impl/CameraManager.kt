@@ -11,13 +11,14 @@ import android.hardware.Camera.FaceDetectionListener
 import android.util.Log
 import android.view.SurfaceHolder
 import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import com.google.mlkit.vision.common.InputImage
 import vn.trunglt.democamera1.managers.ICameraManager
 import java.io.ByteArrayOutputStream
 
 
-class CameraManager : DefaultLifecycleObserver {
+class CameraManager() : DefaultLifecycleObserver {
     private var cameraId: Int = 0
     private var mCamera: Camera? = null
     private var callback: ICameraManager? = null
@@ -58,14 +59,31 @@ class CameraManager : DefaultLifecycleObserver {
         }
     }
 
+    override fun onCreate(owner: LifecycleOwner) {
+        super.onCreate(owner)
+        setupDrawingView()
+        setupPreviewView()
+        Log.wtf("TRUNGLE", "onCreate")
+    }
+
+    override fun onStart(owner: LifecycleOwner) {
+        super.onStart(owner)
+        resumeCamera()
+    }
+
+    override fun onStop(owner: LifecycleOwner) {
+        super.onStop(owner)
+        stopCamera()
+        Log.wtf("TRUNGLE", "onStop")
+    }
+
     override fun onDestroy(owner: LifecycleOwner) {
         super.onDestroy(owner)
         release()
     }
 
-    fun init() {
-        setupDrawingView()
-        setupPreviewView()
+    fun init(lifecycle: Lifecycle) {
+        lifecycle.addObserver(this)
     }
 
     fun setCallback(callback: ICameraManager) {
@@ -97,6 +115,14 @@ class CameraManager : DefaultLifecycleObserver {
         }
     }
 
+    private fun resumeCamera() {
+        openCamera(cameraId)
+    }
+
+    private fun stopCamera() {
+        release()
+    }
+
     fun swap() {
         if (cameraId == CameraInfo.CAMERA_FACING_BACK) {
             openCamera(CameraInfo.CAMERA_FACING_FRONT)
@@ -106,8 +132,6 @@ class CameraManager : DefaultLifecycleObserver {
     }
 
     private fun release() {
-        callback?.surfaceHolder?.removeCallback(surfaceHolderCallback)
-        callback?.drawingView?.holder?.removeCallback(surfaceHolderCallback)
         mCamera?.setPreviewCallback(null)
         mCamera?.release()
         mCamera = null

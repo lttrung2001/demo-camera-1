@@ -32,7 +32,7 @@ class MainActivity : AppCompatActivity() {
 
         initListener()
 
-        cameraManager.init()
+        cameraManager.init(lifecycle)
 
         binding.btnTakePicture.setOnClickListener {
             cameraManager.swap()
