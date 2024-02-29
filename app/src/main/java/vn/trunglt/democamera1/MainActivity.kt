@@ -59,7 +59,7 @@ class MainActivity : AppCompatActivity() {
         val info = CameraInfo()
         for (i in 0 until availableCameras) {
             Camera.getCameraInfo(i, info)
-            if (info.facing == CameraInfo.CAMERA_FACING_BACK) {
+            if (info.facing == CameraInfo.CAMERA_FACING_FRONT) {
                 return i
             }
         }
